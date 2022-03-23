@@ -1,0 +1,12 @@
+[package]
+name = "img-prc-tst"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+jane-eyre = "0.3"
+image     = "0.24"
+imageproc = { git = "https://github.com/image-rs/imageproc" }
+

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use image::buffer::ConvertBuffer;
 use image::GrayImage;
 use image::Rgb;
@@ -7,6 +9,7 @@ use imageproc::filter::gaussian_blur_f32;
 use imageproc::hough::draw_polar_lines;
 use imageproc::hough::LineDetectionOptions;
 use imageproc::hough::{detect_lines, PolarLine};
+use imageproc::point::Point;
 use jane_eyre::Result;
 
 #[derive(Debug)]
@@ -15,33 +18,55 @@ pub struct Line {
     pub b: f32,
 }
 
+impl Line {
+    pub fn intersections(&self, lines: &Vec<Line>, bounds: &Point<u32>) -> Vec<Point<u32>> {
+        lines
+            .iter()
+            .flat_map(|line| {
+                self.intersection(line)
+                    .filter(|i| i.x <= bounds.x && i.y <= bounds.y)
+            })
+            .collect::<Vec<_>>()
+    }
+
+    pub fn intersection(&self, line: &Line) -> Option<Point<u32>> {
+        println!("{line}");
+
+        todo!()
+    }
+}
+
 impl From<&PolarLine> for Line {
     fn from(line: &PolarLine) -> Self {
-        let angle_in_radian = f32::to_radians(line.angle_in_degrees as f32);
-        
-        let y0 = if line.angle_in_degrees  > 90 {
-            line.r / f32::cos(angle_in_radian)
+        let angle = ((line.angle_in_degrees % 90) as f32).to_radians();
+
+        let (a, b) = if line.r == 0f32 {
+            let a = angle.tan();
+            let b = 0f32;
+
+            (a, b)
         } else {
-            line.r / f32::sin(angle_in_radian)
+            let x0 = line.r * angle.sin();
+            let y0 = line.r * angle.cos();
+
+            let a = x0 / y0;
+            let b = y0;
+
+            (a, b)
         };
 
-        let (a, b) = match (line.r == 0f32, line.angle_in_degrees  > 90) {
-            (true, _) => {
-                (f32::tan(angle_in_radian), 0f32)
-            },
-            (false, true) => {
-                let x0 = line.r / f32::cos(angle_in_radian);
-                (y0 as f32 / x0 as f32, y0 as f32)
-            },
-            (false, false) => {
-                let x0 = line.r / f32::sin(angle_in_radian);
-                (y0 as f32 / x0 as f32, y0 as f32)
-            },
-        };
-        
-        println!("angle {} r {} - > a {} b {}", line.angle_in_degrees, line.r, a, b);
+        println!(
+            "angle {} r {} - > a {} b {}",
+            line.angle_in_degrees, line.r, a, b
+        );
 
         Line { a, b }
+    }
+}
+
+impl Display for Line {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "y = {} * x + {}", self.a, self.b)
     }
 }
 
@@ -60,20 +85,24 @@ fn main() -> Result<()> {
         },
     );
 
-    let _lines = polar_lines.iter().map(Line::from).collect::<Vec<_>>();
+    let lines = polar_lines.iter().map(Line::from).collect::<Vec<_>>();
 
-    // let mut cartesian_line: Vec<Point<f32>>;
+    lines.iter().for_each(|line| println! {"{line}"});
 
-    // lines.iter().for_each(|line|{
-    //     println!("{line:?}");
-    //     let cartesian = polar_to_cartesian(line);
-    //     println!("Cartesian x: {},y: {}",cartesian.x,cartesian.y);
-    //     // cartesian_line.push(cartesian);
-    // });
+    let bounds = Point {
+        x: grayscale.width(),
+        y: grayscale.height(),
+    };
+    let intersections = lines
+        .iter()
+        .map(|line| line.intersections(&lines, &bounds))
+        .collect::<Vec<_>>();
 
-    let last_line = [*polar_lines.get(3).unwrap()];
+    intersections
+        .iter()
+        .for_each(|intersection| println! {"{intersection:?}"});
 
-    let with_lines = draw_polar_lines(&source.to_rgb8(), &last_line, Rgb([255, 0, 0]));
+    let with_lines = draw_polar_lines(&source.to_rgb8(), &polar_lines, Rgb([255, 0, 0]));
 
     canny.save("assets/canny.png")?;
     with_lines.save("assets/with_lines.png")?;
@@ -85,4 +114,20 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-//fn line_intersection(line1: )
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_intersection() {
+        let line_a = &Line { a: 1f32, b: 0f32 };
+        let line_b = &Line { a: 0f32, b: 1f32 };
+        let line_c = &Line { a: 1f32, b: 1f32 };
+
+        let intersection = line_a.intersection(&line_b);
+        assert_eq!(intersection, Some(Point{x: 1, y: 1}));
+
+        let intersection = line_a.intersection(&line_c);
+        assert_eq!(intersection, None);
+    }
+}

@@ -79,6 +79,7 @@ impl Display for Line {
 
 fn main() -> Result<()> {
     // let source = image::open("assets/image.png")?;
+    // TODO: Resize picture to 512 x ???
     let source = image::open("assets/source03.png")?;
     let blurred = gaussian_blur_f32(&source.grayscale().to_rgb32f(), 2f32);
     let grayscale: GrayImage = blurred.convert();
@@ -120,6 +121,9 @@ fn main() -> Result<()> {
     // skewed.map(|s| s.save("assets/skewed.png"));
     // if skewed == None {println!("/!\ NO SKEWED PICTURE /!\ ");}
     // // 10x10 -> [(1, 1), (9, 1), (9, 9), (1, 9)] -> [(0, 0), (grayscale.width(), 0), (grayscale.width(), grayscale.height()), (0, grayscale.height())]
+
+    // TODO: Apply Skew to original full size picture 
+    // TODO: Center control points to match full size picture
 
     Ok(())
 }

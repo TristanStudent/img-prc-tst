@@ -19,17 +19,17 @@ pub struct Line {
 }
 
 impl Line {
-    pub fn intersections(&self, lines: &Vec<Line>, bounds: &Point<u32>) -> Vec<Point<u32>> {
+    pub fn intersections(&self, lines: &Vec<Line>, bounds: &Point<i32>) -> Vec<Point<i32>> {
         lines
             .iter()
             .flat_map(|line| {
                 self.intersection(line)
-                    .filter(|i| i.x <= bounds.x && i.y <= bounds.y)
+                    .filter(|i| i.x >= 0 && i.y >= 0 && i.x <= bounds.x && i.y <= bounds.y)
             })
             .collect::<Vec<_>>()
     }
 
-    pub fn intersection(&self, line: &Line) -> Option<Point<u32>> {
+    pub fn intersection(&self, line: &Line) -> Option<Point<i32>> {
         println!("{line}");
 
         todo!()
@@ -90,8 +90,8 @@ fn main() -> Result<()> {
     lines.iter().for_each(|line| println! {"{line}"});
 
     let bounds = Point {
-        x: grayscale.width(),
-        y: grayscale.height(),
+        x: grayscale.width() as i32,
+        y: grayscale.height() as i32,
     };
     let intersections = lines
         .iter()
@@ -125,7 +125,7 @@ mod test {
         let line_c = &Line { a: 1f32, b: 1f32 };
 
         let intersection = line_a.intersection(&line_b);
-        assert_eq!(intersection, Some(Point{x: 1, y: 1}));
+        assert_eq!(intersection, Some(Point { x: 1, y: 1 }));
 
         let intersection = line_a.intersection(&line_c);
         assert_eq!(intersection, None);

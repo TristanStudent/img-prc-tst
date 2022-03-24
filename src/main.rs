@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::Display;
 
 use image::buffer::ConvertBuffer;
@@ -6,11 +7,17 @@ use image::Rgb;
 use imageproc::drawing::draw_cross;
 use imageproc::edges::canny;
 use imageproc::filter::gaussian_blur_f32;
+use imageproc::geometric_transformations::Projection;
 use imageproc::hough::draw_polar_lines;
 use imageproc::hough::LineDetectionOptions;
 use imageproc::hough::{detect_lines, PolarLine};
-use imageproc::point::Point;
 use jane_eyre::Result;
+
+#[derive(Debug, Hash, PartialEq, Eq)]
+pub struct Point {
+    x: i32,
+    y: i32,
+}
 
 #[derive(Debug)]
 pub struct Line {
@@ -19,7 +26,7 @@ pub struct Line {
 }
 
 impl Line {
-    pub fn intersections(&self, lines: &Vec<Line>, bounds: &Point<i32>) -> Vec<Point<i32>> {
+    pub fn intersections(&self, lines: &Vec<Line>, bounds: &Point) -> Vec<Point> {
         lines
             .iter()
             .flat_map(|line| {
@@ -29,7 +36,7 @@ impl Line {
             .collect::<Vec<_>>()
     }
 
-    pub fn intersection(&self, line: &Line) -> Option<Point<i32>> {
+    pub fn intersection(&self, line: &Line) -> Option<Point> {
         println!("{line}");
 
         todo!()
@@ -95,8 +102,8 @@ fn main() -> Result<()> {
     };
     let intersections = lines
         .iter()
-        .map(|line| line.intersections(&lines, &bounds))
-        .collect::<Vec<_>>();
+        .flat_map(|line| line.intersections(&lines, &bounds))
+        .collect::<HashSet<_>>();
 
     intersections
         .iter()
@@ -109,7 +116,10 @@ fn main() -> Result<()> {
 
     draw_cross(&source.to_rgb8(), Rgb([255, 0, 0]), 100, 100).save("assets/with_cross.png")?;
 
-    // from_control_points(from: [(f32, f32); 4], to: [(f32, f32); 4])
+    // let skewed = Projection::from_control_points(from: [(f32, f32); 4], to: [(f32, f32); 4]);
+    // skewed.map(|s| s.save("assets/skewed.png"));
+    // if skewed == None {println!("/!\ NO SKEWED PICTURE /!\ ");}
+    // // 10x10 -> [(1, 1), (9, 1), (9, 9), (1, 9)] -> [(0, 0), (grayscale.width(), 0), (grayscale.width(), grayscale.height()), (0, grayscale.height())]
 
     Ok(())
 }

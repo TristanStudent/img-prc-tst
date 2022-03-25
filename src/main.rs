@@ -37,15 +37,26 @@ impl Line {
     }
 
     pub fn intersection(&self, line: &Line) -> Option<Point> {
-        println!("{line}");
+        //println!("self:{self}");
+        println!("self  a:{:?}, b:{:?}",self.a,self.b);
+        println!("line  a:{:?}, b:{:?}",line.a,line.b);
 
-        todo!()
+        if self.a == line.a {
+            None
+        }else {
+            let x = (line.b - self.b)/(self.a - line.a);
+            let y= (self.a * x + self.b) as i32;
+            let x = x as i32;
+            println!("point:x:{x}, y:{y}");
+
+            Some(Point { x, y })
+        }
     }
 }
 
 impl From<&PolarLine> for Line {
     fn from(line: &PolarLine) -> Self {
-        let angle = ((line.angle_in_degrees % 90) as f32).to_radians();
+        let angle = ((line.angle_in_degrees) as f32).to_radians();
 
         let (a, b) = if line.r == 0f32 {
             let a = angle.tan();
@@ -53,12 +64,8 @@ impl From<&PolarLine> for Line {
 
             (a, b)
         } else {
-            let x0 = line.r * angle.sin();
-            let y0 = line.r * angle.cos();
-
-            let a = x0 / y0;
-            let b = y0;
-
+            let a = line.r * angle.cos();
+            let b = line.r * angle.sin();
             (a, b)
         };
 
@@ -95,7 +102,7 @@ fn main() -> Result<()> {
 
     let lines = polar_lines.iter().map(Line::from).collect::<Vec<_>>();
 
-    lines.iter().for_each(|line| println! {"{line}"});
+   // lines.iter().for_each(|line| println! {"{line}"});
 
     let bounds = Point {
         x: grayscale.width() as i32,
@@ -115,7 +122,7 @@ fn main() -> Result<()> {
     canny.save("assets/canny.png")?;
     with_lines.save("assets/with_lines.png")?;
 
-    draw_cross(&source.to_rgb8(), Rgb([255, 0, 0]), 100, 100).save("assets/with_cross.png")?;
+    draw_cross(&source.to_rgb8(), Rgb([255, 0, 0]), 100,100).save("assets/with_cross.png")?;
 
     // let skewed = Projection::from_control_points(from: [(f32, f32); 4], to: [(f32, f32); 4]);
     // skewed.map(|s| s.save("assets/skewed.png"));
